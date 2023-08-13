@@ -1,0 +1,138 @@
+---
+title: "hak"
+author: "GrGladkov"
+date: "2023-08-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/storage/trash/hak")
+options(getClass.msg=FALSE)
+
+```
+
+
+```{r}
+
+library(dada2)
+
+setwd("~/storage/trash/hak"")
+
+path_trein_set_species = "~/storage/somebases/silva_species_assignment_v138.1.fa.gz"
+
+```
+
+
+```{r, eval=FALSE}
+
+tx <- read_tsv("taxa_dna.tsv")
+seq <- tx %>% pull("...1")
+taxa.dada2.species <- assignSpecies(seq, path_trein_set_species)
+df <- taxa.dada2.species %>% 
+  as.data.frame() %>% 
+  rownames_to_column("ID")
+
+write_tsv(df, file = 'species.taxa', col_names = TRUE)
+
+```
+
+
+```{r}
+
+is.df <- readr::read_csv("is.csv")
+
+is.df %>% 
+  select(c("is_type", "site", "type", "size")) %>% 
+  ggplot(aes(x = type, y = size)) +
+  geom_boxplot(outlier.size = 0, outlier.alpha = 0)
+
+```
+
+```{r}
+
+is.long <- is.df %>% 
+  select(c("is_type", "site", "type", "size")) 
+ 
+aov(size ~ is_type*type, data = is.long) %>%
+  rstatix::tukey_hsd()
+
+```
+
+```{r}
+
+is.long %>% 
+  filter(is_type %in% c("IS21", "IS3")) %>% 
+  ggplot(aes(x = type, y = size)) +
+  geom_boxplot()
+
+```
+
+
+```{r}
+
+smash.long <- readr::read_csv("smash.csv") %>% 
+  select(c("index", "type", "cluster_type", "value")) 
+
+readr::read_csv("smash.csv") %>% 
+  select(c("index", "type", "cluster_type", "value")) %>% 
+  ggplot(aes(x = type, y = value)) +
+  geom_boxplot(outlier.size = 0, outlier.alpha = 0)
+
+```
+
+```{r}
+
+aov(value ~ type*cluster_type, data = smash.long) %>%
+  rstatix::tukey_hsd() %>% 
+   filter(p.adj < 0.05)
+
+smash.long %>% 
+  select(c("index", "type", "cluster_type", "value")) %>% 
+  filter(cluster_type  %in% c("lanthipeptides", "sactipeptides")) %>% 
+  ggplot(aes(x = type, y = value)) +
+  geom_boxplot(aes(color = cluster_type)) +
+      theme_light() + 
+    scale_color_brewer(palette="Dark2") +
+     labs(title = "Metabolic cluster data - maybe sactipeptides are important?") +
+    annotate("text",
+     x=0.6, y=0.95, label = "p.adj = ****")
+
+```
+
+```{r}
+
+readr::read_tsv("stat_MN") %>% 
+  select(sum_len) %>% 
+  ggplot(aes(x=sum_len)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=0.1,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="red") +
+        theme_light() + 
+    scale_color_brewer(palette="Dark2") +
+     labs(title = "Health-scarce - genome size")
+
+```
+```{r}
+
+a <- readr::read_tsv("stat_MH")
+b <- readr::read_tsv("stat_NE")
+a %>%  add_row(b)
+  
+a %>%  select(sum_len) %>% 
+  ggplot(aes(x=sum_len)) + 
+    geom_histogram(aes(y=..density..),      # Histogram with density instead of count on y-axis
+                   binwidth=0.1,
+                   colour="black", fill="white") +
+    geom_density(alpha=.2, fill="lightblue") +
+        theme_light() + 
+    scale_color_brewer(palette="Dark2") +
+     labs(title = "Health-prevalent - genome size")
+
+```
+
+
+
+
